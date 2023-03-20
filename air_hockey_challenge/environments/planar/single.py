@@ -22,7 +22,11 @@ class AirHockeySingle(AirHockeyBase):
         self.q_pos_prev = np.zeros(self.env_info["robot"]["n_joints"])
         self.q_vel_prev = np.zeros(self.env_info["robot"]["n_joints"])
 
+        # added flag
         self.has_hit = False
+
+        # added viewer
+        self.rgb_viewer = None
 
     def get_ee(self):
         """
@@ -99,7 +103,18 @@ class AirHockeySingle(AirHockeyBase):
     def render(self, mode="human"):
         if mode == "human":
             super().render()
-        elif mode == "rgv_array":
-            pass
+        elif mode == "rgb_array":
+            w = 480
+            h = 270
+            self.get_rgb_viewer().render(width=w, height=h, camera_id=-1)
+            data = self.get_rgb_viewer().read_pixels(width=w, height=h, depth=False)
+            data = data[::-1, :, :]
+            return data[45:225 , 160:, :]
         else:
             raise NotImplementedError
+
+    def get_rgb_viewer(self, mode="rgb_array", width=480, height=270):
+        if self.rgb_viewer == None:
+            from gym.envs.mujoco.mujoco_rendering import RenderContextOffscreen
+            self.rgb_viewer = RenderContextOffscreen(width, height, self._model, self._data)
+        return self.rgb_viewer
