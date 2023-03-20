@@ -22,6 +22,8 @@ class AirHockeySingle(AirHockeyBase):
         self.q_pos_prev = np.zeros(self.env_info["robot"]["n_joints"])
         self.q_vel_prev = np.zeros(self.env_info["robot"]["n_joints"])
 
+        self.has_hit = False
+
     def get_ee(self):
         """
         Getting the ee properties from the current internal state. Can also be obtained via forward kinematics
@@ -67,6 +69,7 @@ class AirHockeySingle(AirHockeyBase):
         return new_obs
 
     def setup(self, state=None):
+        self.has_hit = False
         for i in range(3):
             self._data.joint("planar_robot_1/joint_" + str(i+1)).qpos = self.init_state[i]
             self.q_pos_prev[i] = self.init_state[i]
@@ -88,3 +91,15 @@ class AirHockeySingle(AirHockeyBase):
         yaw_angle = self.obs_helper.get_from_obs(obs, "puck_yaw_pos")
         self.obs_helper.get_from_obs(obs, "puck_yaw_pos")[:] = (yaw_angle + np.pi) % (2 * np.pi) - np.pi
         return obs
+
+    def _simulation_post_step(self):
+        if not self.has_hit:
+            self.has_hit = self._check_collision("puck", "robot_1/ee")
+
+    def render(self, mode="human"):
+        if mode == "human":
+            super().render()
+        elif mode == "rgv_array":
+            pass
+        else:
+            raise NotImplementedError
